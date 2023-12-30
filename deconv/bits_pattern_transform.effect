@@ -1,0 +1,262 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float elapsed_time;
+uniform float2 uv_offset;
+uniform float2 uv_scale;
+uniform float2 uv_size;
+uniform float2 uv_pixel_interval;
+
+// sliders and etc:
+uniform int KLOG<
+  string widget_type = "slider";
+  int minimum = 1;
+  int maximum = 8;
+  int step=1;
+> = 6;
+
+/*-------------------------.
+| :: Texture and sampler:: |
+'-------------------------*/
+
+
+uniform texture2d image0;
+sampler_state sampler0 
+{
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image0;
+};
+
+uniform texture2d image1;
+sampler_state sampler1 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image1;
+};
+
+uniform texture2d image2;
+sampler_state sampler2 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = sampler2;
+};
+
+
+uniform texture2d image3;
+sampler_state sampler3 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image0;
+};
+
+uniform texture2d image4;
+sampler_state sampler4 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image1;
+};
+
+uniform texture2d image5;
+sampler_state sampler5 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = sampler2;
+};
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+struct ColorData {
+    float4 color0 : SV_TARGET0;
+    float4 color1 : SV_TARGET1;
+    float4 color2 : SV_TARGET2;
+    float4 color3 : SV_TARGET3;
+    float4 color4 : SV_TARGET4;
+    float4 color5 : SV_TARGET5;
+};
+
+VertData mainTransform(VertData v_in)
+{
+    VertData vert_out = v_in;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv = v_in.uv * uv_scale + uv_offset;
+    return vert_out;
+}
+
+ColorData setColorData(VertData v_in) : SV_TARGET0
+{
+    ColorData cd;
+    cd.color0 = image.Sample(textureSampler, v_in.uv);
+    cd.color1 = float4(0.0,0.0,0.0,1.0);
+    cd.color2 = float4(0.0,0.0,0.0,1.0);
+    cd.color3 = float4(0.0,0.0,0.0,1.0);
+    cd.color4 = float4(0.0,0.0,0.0,1.0);
+    cd.color5 = float4(0.0,0.0,0.0,1.0);
+    return cd;
+}
+
+float shouldNotNegate(in int i1, in int i2, in int n) {
+    int nt = 1;
+    float sign = 1.0;
+    while (n > 0) {
+        n >>= 1;
+        if (((n & i1) > 0) && ((nt & i2) > 0)) {
+            sign = -sign;
+        }
+        nt <<= 1;
+    }
+    return sign;
+}
+
+float4 mainFilterForwardV(VertData v_in) : SV_TARGET1
+{
+    int ks = 1 << KLOG;
+    float4 obsTex = image0.Sample(sampler0, v_in.uv);
+    float3 colorSum = float3(obsTex.xyz);
+    float2 xy = floor(v_in.pos.xy);
+    //float kernelMult = 1.0 / ks;
+    //if (v_in.uv.x < 0 || v_in.uv.y < 0 || v_in.uv.x > 1 || v_in.uv.y > 1) return float4(0.0);
+    colorSum = float3(0.0);
+    float3 nextColor;
+    int xi = int(xy.x);
+    for (int yi = 0; yi < ks; yi++) {
+        nextColor = image0.Load(int3(xi, yi, 0)).xyz;
+        colorSum += shouldNotNegate(xi, yi, ks)*nextColor;//*kernelMult;
+    }
+    return float4(colorSum, 1.0);
+}
+
+float4 mainFilterForwardH(VertData v_in) : SV_TARGET2
+{
+    int ks = 1 << KLOG;
+    float4 obsTex = image1.Sample(sampler1, v_in.uv);
+    float3 colorSum = float3(obsTex.xyz);
+    float2 xy = floor(v_in.pos.xy);
+    //float kernelMult = 1.0 / ks;
+    //if (v_in.uv.x < 0 || v_in.uv.y < 0 || v_in.uv.x > 1 || v_in.uv.y > 1) return float4(0.0);
+    colorSum = float3(0.0);
+    float3 nextColor;
+    int yi = int(xy.y);
+    for (int xi = 0; xi < ks; xi++) {
+        nextColor = image1.Load(int3(xi, yi, 0)).xyz;
+        colorSum += shouldNotNegate(xi, yi, ks)*nextColor;//*kernelMult;
+    }
+    return float4(colorSum, 1.0);
+}
+
+float4 mainFilterProcess(VertData v_in) : SV_TARGET3 {
+    return image2.Sample(sampler2, v_in.uv);
+}
+
+float4 mainFilterBackwardH(VertData v_in) : SV_TARGET4
+{
+    int ks = 1 << KLOG;
+    float4 obsTex = image3.Sample(sampler3, v_in.uv);
+    float3 colorSum = float3(obsTex.xyz);
+    float2 xy = floor(v_in.pos.xy);
+    float kernelMult = 1.0 / (ks << KLOG);
+    //if (v_in.uv.x < 0 || v_in.uv.y < 0 || v_in.uv.x > 1 || v_in.uv.y > 1) return float4(0.0);
+    colorSum = float3(0.0);
+    float3 nextColor;
+    int yi = int(xy.y);
+    for (int xi = 0; xi < ks; xi++) {
+        nextColor = image3.Load(int3(xi, yi, 0)).xyz;
+        //nextColor = scaleBackward_r(nextColor);
+        //nextColor -= float3(0.5);
+        colorSum += shouldNotNegate(xi, yi, ks)*nextColor;
+    }
+    return float4(colorSum, 1.0);
+}
+
+float4 mainFilterBackwardV(VertData v_in) : SV_TARGET5
+{
+    int ks = 1 << KLOG;
+    float4 obsTex = image4.Sample(sampler4, v_in.uv);
+    float3 colorSum = float3(obsTex.xyz);
+    float2 xy = floor(v_in.pos.xy);
+    float kernelMult = 1.0 / (ks << KLOG);
+    //if (v_in.uv.x < 0 || v_in.uv.y < 0 || v_in.uv.x > 1 || v_in.uv.y > 1) return float4(0.0);
+    colorSum = float3(0.0);
+    float3 nextColor;
+    int xi = int(xy.x);
+    for (int yi = 0; yi < ks; yi++) {
+        nextColor = image4.Load(int3(xi, yi, 0)).xyz;
+        //nextColor = scaleBackward_r(nextColor);
+        //nextColor -= float3(0.5);
+        colorSum += shouldNotNegate(xi, yi, ks)*nextColor;
+    }
+    return float4(colorSum, 1.0);
+}
+
+float4 mainImage(VertData v_in) : SV_TARGET6
+{
+    return image5.Sample(sampler5, v_in.uv);
+}
+
+technique Draw
+{    
+    pass pre
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = setColorData(v_in);
+    }    
+
+    pass b0
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = mainFilterForwardV(v_in);
+    }
+
+    pass b1
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = mainFilterForwardH(v_in);
+    }
+
+    pass b2
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = mainFilterProcess(v_in);
+    }
+
+    pass b3
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = mainFilterBackwardH(v_in);
+    }
+
+    pass b4
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = mainFilterBackwardV(v_in);
+    }
+
+    pass p0
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = mainImage(v_in);
+    }
+
+}

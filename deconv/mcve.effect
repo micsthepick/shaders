@@ -1,0 +1,120 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float elapsed_time;
+uniform float2 uv_offset;
+uniform float2 uv_scale;
+uniform float2 uv_size;
+uniform float2 uv_pixel_interval;
+
+
+/*-------------------------.
+| :: Texture and sampler:: |
+'-------------------------*/
+
+
+uniform texture2d image0;
+sampler_state sampler0 
+{
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image0;
+};
+
+uniform texture2d image1;
+sampler_state sampler1 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image1;
+};
+
+uniform texture2d image2;
+sampler_state sampler2 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = sampler2;
+};
+
+
+uniform texture2d image3;
+sampler_state sampler3 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image0;
+};
+
+uniform texture2d image4;
+sampler_state sampler4 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = image1;
+};
+
+uniform texture2d image5;
+sampler_state sampler5 {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+    texture2d  = sampler2;
+};
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Border;
+    AddressV  = Border;
+    BorderColor = 00000000;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+struct ColorData {
+    float4 color0 : SV_TARGET0;
+    float4 color1 : SV_TARGET1;
+    float4 color2 : SV_TARGET2;
+    float4 color3 : SV_TARGET3;
+    float4 color4 : SV_TARGET4;
+    float4 color5 : SV_TARGET5;
+};
+
+VertData mainTransform(VertData v_in)
+{
+    VertData vert_out = v_in;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv = v_in.uv * uv_scale + uv_offset;
+    return vert_out;
+}
+
+ColorData setColorData(VertData v_in) : SV_TARGET0
+{
+    ColorData cd;
+    cd.color0 = image.Sample(textureSampler, v_in.uv);
+    cd.color1 = float4(0.0,0.0,0.0,1.0);
+    cd.color2 = float4(0.0,0.0,0.0,1.0);
+    cd.color3 = float4(0.0,0.0,0.0,1.0);
+    cd.color4 = float4(0.0,0.0,0.0,1.0);
+    cd.color5 = float4(0.0,0.0,0.0,1.0);
+    return cd;
+}
+
+technique Draw
+{    
+    pass pre
+    {
+        vertex_shader = mainTransform(v_in);
+        pixel_shader = setColorData(v_in);
+    }
+}

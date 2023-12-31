@@ -45,7 +45,7 @@ sampler_state sampler2 {
     AddressU  = Border;
     AddressV  = Border;
     BorderColor = 00000000;
-    texture2d  = sampler2;
+    texture2d  = image2;
 };
 
 
@@ -55,7 +55,7 @@ sampler_state sampler3 {
     AddressU  = Border;
     AddressV  = Border;
     BorderColor = 00000000;
-    texture2d  = image0;
+    texture2d  = image3;
 };
 
 uniform texture2d image4;
@@ -64,7 +64,7 @@ sampler_state sampler4 {
     AddressU  = Border;
     AddressV  = Border;
     BorderColor = 00000000;
-    texture2d  = image1;
+    texture2d  = image4;
 };
 
 uniform texture2d image5;
@@ -73,7 +73,7 @@ sampler_state sampler5 {
     AddressU  = Border;
     AddressV  = Border;
     BorderColor = 00000000;
-    texture2d  = sampler2;
+    texture2d  = sampler5;
 };
 
 sampler_state textureSampler {

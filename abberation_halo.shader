@@ -98,6 +98,7 @@ float4 mainImage(VertData v_in) : TARGET
     outcol = sumcol.rgb / sumw;
     outcol = lerp(lin2srgb(outcol), original.rgb, original.a);
     float al = alphabright+exp(alphacont)*colSumA/float(num_iter * directions);
+    al = max(al, original.a);
     return float4(outcol, al);
     return image.Sample(textureSampler, v_in.uv);
 }
